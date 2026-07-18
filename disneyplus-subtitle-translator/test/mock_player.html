@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>Disney+ Translator Extension - Verification Sandbox</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../content/content.css">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #0f111a;
+      color: #fff;
+      margin: 40px;
+    }
+    .sandbox-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 28px;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      color: #9aa0a6;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .control-panel {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    button, input[type="text"] {
+      font-family: 'Outfit', sans-serif;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    button {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    input[type="text"] {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    /* Video Player Mock Frame */
+    .player-mock-frame {
+      width: 100%;
+      height: 380px;
+      background: #000;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #23273a;
+    }
+    
+    /* Log console style */
+    .log-console {
+      margin-top: 30px;
+      background: #07080d;
+      border: 1px solid #1c1e29;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #00ff66;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .log-entry {
+      margin-bottom: 6px;
+    }
+  </style>
+  <script>
+    // 1. Mock Chrome Extension storage and runtime APIs
+    const mockStorage = {
+      enabled: true,
+      mode: 'dual',
+      targetLang: 'zh-CN',
+      engine: 'google',
+      geminiKey: '',
+      openaiKey: '',
+      deeplKey: '',
+      fontSize: 24,
+      textColor: '#ffcc00',
+      bgOpacity: 0.4
+    };
+
+    const listeners = [];
+
+    window.chrome = {
+      storage: {
+        local: {
+          get: (keys, callback) => {
+            log('Extension requested settings: ' + JSON.stringify(keys));
+            const result = {};
+            keys.forEach(k => {
+              result[k] = mockStorage[k];
+            });
+            setTimeout(() => callback(result), 0);
+          },
+          set: (obj) => {
+            log('Extension saved settings: ' + JSON.stringify(obj));
+            const changes = {};
+            for (let [key, val] of Object.entries(obj)) {
+              changes[key] = { newValue: val, oldValue: mockStorage[key] };
+              mockStorage[key] = val;
+            }
+            listeners.forEach(l => l(changes));
+          }
+        },
+        onChanged: {
+          addListener: (callback) => {
+            listeners.push(callback);
+          }
+        }
+      },
+      runtime: {
+        lastError: null,
+        sendMessage: (msg, callback) => {
+          log(`Extension background message sent: Action = "${msg.action}", Text = "${msg.text}"`);
+          if (msg.action === 'translate') {
+            // Call Google Translate directly to verify active networking connection!
+            const tl = msg.targetLang === 'zh-TW' ? 'zh-TW' : 'zh-CN';
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=auto&tl=${tl}&q=${encodeURIComponent(msg.text)}`;
+            
+            fetch(url)
+              .then(res => res.json())
+              .then(data => {
+                if (data && data[0]) {
+                  const translation = data[0].map(item => item[0]).join('').trim();
+                  log(`Translated successfully: "${msg.text}" -> "${translation}"`);
+                  callback({ success: true, translation: translation });
+                } else {
+                  callback({ success: false, error: 'Malformed response structure' });
+                }
+              })
+              .catch(err => {
+                log(`Network translation error: ${err.message}`, true);
+                callback({ success: false, error: err.message });
+              });
+          }
+          return true; // Keep channel open
+        }
+      }
+    };
+
+    function log(msg, isError = false) {
+      const consoleEl = document.getElementById('log-console');
+      if (!consoleEl) return;
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      if (isError) entry.style.color = '#ef4444';
+      entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      consoleEl.appendChild(entry);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+  </script>
+</head>
+<body>
+  <div class="sandbox-container">
+    <h1>Disney+ 字幕翻译插件验证沙盒</h1>
+    <p>
+      这是一个本地测试沙盒。我们在当前页面放置了 HTML5 播放器，并模拟了 Disney+ 播放器的 Shadow DOM 字幕结构。<br>
+      在此测试中，插件将实际调用 Google 翻译接口，以测试字幕提取、坐标对齐、双语渲染等逻辑的完整性。
+    </p>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <input type="text" id="subtitle-input" value="こんにちは、お元気ですか？本日はディズニープラスへようこそ。">
+      <button onclick="updateMockSubtitle()">更新字幕 (Trigger Polling)</button>
+      <button onclick="toggleTranslationMode()">切换显示模式 (Bilingual/Chinese Only)</button>
+    </div>
+
+    <!-- Mock Video Player Frame with HTML5 Video -->
+    <div class="player-mock-frame" id="mock-player-host">
+      <video id="mock-video" style="width: 100%; height: 100%; object-fit: cover;" autoplay loop muted playsinline src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+    </div>
+
+    <!-- Logs -->
+    <div class="log-console" id="log-console">
+      <div class="log-entry">[System] Verification environment initialized.</div>
+    </div>
+  </div>
+
+  <script>
+    // Create the Shadow DOM player mock structure
+    const host = document.getElementById('mock-player-host');
+    const shadow = host.attachShadow({ mode: 'open' });
+    
+    // Create video placeholder styles to display in Shadow DOM
+    const style = document.createElement('style');
+    style.textContent = `
+      .shaka-text-container {
+        position: absolute;
+        bottom: 40px;
+        left: 5%;
+        right: 5%;
+        text-align: center;
+        z-index: 100;
+        pointer-events: none;
+      }
+      .shaka-text-container div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .shaka-text-container span {
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 20px;
+        font-family: sans-serif;
+        display: inline-block;
+      }
+    `;
+    shadow.appendChild(style);
+
+    // Create Shaka text container
+    const container = document.createElement('div');
+    container.className = 'shaka-text-container';
+    
+    const wrapperDiv = document.createElement('div');
+    const subtitleSpan = document.createElement('span');
+    subtitleSpan.innerText = document.getElementById('subtitle-input').value;
+    
+    wrapperDiv.appendChild(subtitleSpan);
+    container.appendChild(wrapperDiv);
+    shadow.appendChild(container);
+
+    function updateMockSubtitle() {
+      const txt = document.getElementById('subtitle-input').value;
+      subtitleSpan.innerText = txt;
+      log(`Mock Japanese subtitle updated: "${txt}"`);
+    }
+
+    function toggleTranslationMode() {
+      const nextMode = mockStorage.mode === 'dual' ? 'only_translated' : 'dual';
+      log(`Switching mode to: ${nextMode}`);
+      window.chrome.storage.local.set({ mode: nextMode });
+    }
+  </script>
+  
+  <!-- Load the content script -->
+  <script src="../content/content.js"></script>
+</body>
+</html>

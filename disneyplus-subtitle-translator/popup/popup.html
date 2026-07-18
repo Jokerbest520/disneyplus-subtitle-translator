@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disney+ 字幕翻译助手</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-logo">
+        <div class="logo-icon">文</div>
+        <div class="logo-text">
+          <h1>Disney+ Translator</h1>
+          <span class="version">v1.0.0</span>
+        </div>
+      </div>
+      <div class="status-toggle">
+        <label class="switch-control">
+          <input type="checkbox" id="enabled-toggle" checked>
+          <span class="slider-toggle"></span>
+        </label>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Section 1: Translation Settings -->
+      <section class="section">
+        <div class="section-title">翻译配置</div>
+        
+        <div class="control-group">
+          <label for="mode-select">显示模式</label>
+          <div class="select-wrapper">
+            <select id="mode-select">
+              <option value="dual">双语对照 (Original + Chinese)</option>
+              <option value="only_translated">仅显示译文 (Only Chinese)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="lang-select">目标语言</label>
+          <div class="select-wrapper">
+            <select id="lang-select">
+              <option value="zh-CN">简体中文 (Simplified Chinese)</option>
+              <option value="zh-TW">繁体中文 (Traditional Chinese)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="engine-select">翻译引擎</label>
+          <div class="select-wrapper">
+            <select id="engine-select">
+              <option value="google">Google 翻译 (免密钥)</option>
+              <option value="gemini">Gemini AI (高精度 / 推荐)</option>
+              <option value="openai">OpenAI GPT-4o</option>
+              <option value="deepl">DeepL 翻译</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: API Keys Configuration (Dynamic) -->
+      <section class="section api-keys-section" id="api-keys-section">
+        <div class="section-title">API 密钥设置</div>
+        
+        <div class="key-input-container hidden" id="gemini-key-group">
+          <div class="input-header">
+            <label for="gemini-key">Gemini API Key</label>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="helper-link">获取 Key</a>
+          </div>
+          <input type="password" id="gemini-key" placeholder="AI Studio API 密钥">
+        </div>
+
+        <div class="key-input-container hidden" id="openai-key-group">
+          <div class="input-header">
+            <label for="openai-key">OpenAI API Key</label>
+            <a href="https://platform.openai.com/api-keys" target="_blank" class="helper-link">获取 Key</a>
+          </div>
+          <input type="password" id="openai-key" placeholder="sk-...">
+        </div>
+
+        <div class="key-input-container hidden" id="deepl-key-group">
+          <div class="input-header">
+            <label for="deepl-key">DeepL API Key</label>
+            <a href="https://www.deepl.com/pro-api" target="_blank" class="helper-link">获取 Key</a>
+          </div>
+          <input type="password" id="deepl-key" placeholder="DeepL 认证密钥">
+        </div>
+      </section>
+
+      <!-- Section 3: Subtitles Appearance -->
+      <section class="section">
+        <div class="section-title">字幕外观样式</div>
+
+        <div class="control-group">
+          <div class="range-header">
+            <label for="font-size-slider">字体大小</label>
+            <span class="range-value" id="font-size-val">20px</span>
+          </div>
+          <input type="range" id="font-size-slider" min="14" max="36" value="20" class="styled-range">
+        </div>
+
+        <div class="control-group">
+          <label>译文字体颜色</label>
+          <div class="color-palette">
+            <button class="color-dot active" data-color="#ffcc00" style="background-color: #ffcc00;"></button>
+            <button class="color-dot" data-color="#ffffff" style="background-color: #ffffff;"></button>
+            <button class="color-dot" data-color="#00ffff" style="background-color: #00ffff;"></button>
+            <button class="color-dot" data-color="#00ff99" style="background-color: #00ff99;"></button>
+            <button class="color-dot" data-color="#ff99cc" style="background-color: #ff99cc;"></button>
+            <div class="color-picker-wrapper">
+              <input type="color" id="custom-color-picker" value="#ffcc00">
+              <span class="custom-color-icon">🎨</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="range-header">
+            <label for="bg-opacity-slider">背景透明度</label>
+            <span class="range-value" id="bg-opacity-val">40%</span>
+          </div>
+          <input type="range" id="bg-opacity-slider" min="0" max="100" value="40" class="styled-range">
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Enjoy Disney+ with Chinese Subtitles</p>
+      <span>Made with ❤️ for macOS Safari</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
